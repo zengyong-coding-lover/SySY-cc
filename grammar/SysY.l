@@ -125,14 +125,14 @@ MACRO_LINE      "__LINE__"
 <MULTICOMMENT>[*]+/[^/]
 <MULTICOMMENT>[*][/] { BEGIN(INITIAL); }
 %%
-// 完成功能：将 字符串 text 用 base进制 转换为10进制的值
 I32CONST_t str2int(const char* text, int base){
-    TODO();
-    // 提示：用 strtoll 函数
+	char *endptr;
+    errno = 0;
+    return strtoll(text, &endptr, base);
 }
 
-// 完成功能：将 字符串 text 用 base进制 转换为10进制的浮点值（浮点测例暂不要求，可不实现）
 F32CONST_t str2float(const char *text) {
-    TODO();
-    // 提示：用 strtod 函数
+    char *endptr;
+    errno = 0;
+    return strtod(text, &endptr);
 }

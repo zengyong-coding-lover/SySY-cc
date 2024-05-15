@@ -80,11 +80,11 @@ MINUS DIV AND OR DOT NOT LP RP LB RB LC RC AERROR CONST VOID MOD  LE GE EQ NEQ
 void yyerror(Program *program, const char *str) { }
 }
 %%
-S : CompUnit { TODO();/*完成：设置 program 的 ast_root 为 CompUnit指向的节点*/ }
+S : CompUnit { program->set_ast_root($1);}
 
 CompUnit : CompUnit Declaration { $$ = new Ast_Node(CompUnit, {$1, $2});}
          | CompUnit FuncDeclaration { $$ = new Ast_Node(CompUnit, {$1, $2});}
-         | /* *empty */             { TODO();/*完成：新建空子节点*/ }
+         | /* *empty */             { $$ = new Ast_Node(CompUnit, {new Ast_Node(EMPTY_)}); }
          ;
 
 Type : INT   {  $$ = new Ast_Node(Type_, {$1});}
