@@ -263,9 +263,17 @@ static void Syntax_VarInitDeclaratorList(Ast_Node *var_init_declaratorlist) {
     assert(childs[0]->get_nonterminal_type() == Type_);
 
     // 完成：实现解析以逗号分隔的所有 VarInitDeclarator
-    TODO();
-    // 实现时请删除以下代码
-    Syntax_VarInitDeclarator(nullptr, nullptr);
+    Ast_Node *type_node = childs[0]->get_childs()[0];
+
+    childs = var_init_declaratorlist->get_childs();
+    while (childs.size() == 3) {
+        assert(childs[2]->get_nonterminal_type() == VarInitDeclarator);
+        Type *base_type = new Type(Token_BasicType(type_node->get_terminal_type()));
+        Syntax_VarInitDeclarator(childs[2], base_type);
+        childs = childs[0]->get_childs();
+    } 
+    Type *base_type = new Type(Token_BasicType(type_node->get_terminal_type()));
+    Syntax_VarInitDeclarator(childs[1], base_type);
 }
 
 /*
@@ -315,7 +323,10 @@ static Symbol *Syntax_Declarator(Ast_Node *declarator, Type *base_type, bool is_
     while (declarator->get_childs().size() == 4) {
         // 实现：解析数组声明得到数据类型
         // 提示：const_exp.exp_info.node_val.get_i32_val() 已经计算得到const_exp的整型值
-        TODO();
+        Ast_Node *const_exp = declarator->get_childs()[2];
+        Syntax_ConstExp(const_exp);
+        size_t length = const_exp->exp_info.node_val.get_i32_val(); // 声明的长度
+        base_type = new Type(base_type, length);
         declarator = declarator->get_childs()[0];
     }
     std::string id = declarator->get_childs()[0]->get_id_name();
@@ -415,7 +426,13 @@ static Func *Syntax_FuncHead(Ast_Node *funchead) {
     }
     Func *func;
     // 实现： 解析函数头部，根据返回值类型创建函数对象
-    TODO();
+    if (funchead->get_childs()[0]->get_is_terminal()) {
+        func = new Func(id_name, true, false);
+    }
+    else {
+        Ast_Node *type = funchead->get_childs()[0];
+        func = new Func(id_name, new Type(Token_BasicType(type->get_childs()[0]->get_terminal_type())), false);
+    }
     global_program->add_func(func);
     std::stack<Syntax_Symbol> new_stack;
     new_stack.push(Syntax_Symbol(func));
