@@ -426,9 +426,15 @@ LOrExp : LOrExp OR LAndExp
 static void Ast2IR_LOrExp(Ast_Node *lorexp, Basic_Block_Node *true_block, Basic_Block_Node *false_block) {
     assert(lorexp->get_nonterminal_type() == LOrExp);
     // 完成：参考 and 的短路求值（Ast2IR_LAndExp）， 实现 or 的短路求值
-    TODO();
-    // 实现时请删去以下语句
-    Ast2IR_LAndExp(nullptr, nullptr, nullptr);
+    if (lorexp->get_childs().size() == 1) {
+        Ast2IR_LAndExp(lorexp->get_childs()[0], true_block, false_block);
+        return;
+    }
+    Basic_Block_Node *and_block = new Basic_Block_Node();
+    current_func_add_bb_tail(and_block);
+    Ast2IR_LOrExp(lorexp->get_childs()[0], true_block, and_block);
+    current_bb = and_block;
+    Ast2IR_LAndExp(lorexp->get_childs()[2], true_block, false_block);
 }
 /*
 Cond : LOrExp
@@ -487,7 +493,10 @@ static void Ast2IR_Stmt(Ast_Node *stmt, Basic_Block_Node *cond_block, Basic_Bloc
             break;
         case CONTINUE_:
             // 完成：添加跳转指令，跳转到该层循环的条件判断块
-            TODO();
+            new_bl = new IR_Instr(IR_Br_Instr(new Basic_Block_Edge(current_bb, cond_block)));
+            current_bb_add_instr(new_bl);
+            current_bb = new Basic_Block_Node();
+            current_func_add_bb_tail(current_bb);
             break;
         case IF_: {
             Basic_Block_Node *true_block = new Basic_Block_Node();
@@ -590,15 +599,32 @@ static void Ast2IR_Block(Ast_Node *block, Basic_Block_Node *cond_block, Basic_Bl
     Ast2IR_BlockItems(blockitems, cond_block, exit_block);
 }
 static void add_ret(Func *func) {
-    /* 
-    func->get_ast_body() 为block节点，表示函数体
-    由于源代码可能没有 return 语句，为了方便之后的分析，需要在函数体末尾添加一个 return 语句
-    完成：每个函数体末尾添加一个 AST形式的 return 语句：
-        (1) 当函数返回值类型为 void 时，返回值为 空
-        (2) 当函数返回值类型为 int 时，返回值为 0
-        (3) 当函数返回值类型为 float 时，返回值为 0.0 (可不完成)
-    */
-    TODO();
+    Ast_Node *stmtexp = nullptr;
+    if (!func->get_is_void()) {
+        Ast_Node *ret_val = nullptr;
+        switch (func->get_ret_type()->get_basic_type()) {
+        case I32:
+            ret_val = new Ast_Node(I32CONST_, Basic_Value(I32CONST_t(0)));
+            break;
+        case F32:
+            ret_val = new Ast_Node(F32CONST_, Basic_Value(F32CONST_t(0)));
+            break;
+        }
+        Ast_Node *primaryexp = new Ast_Node(PrimaryExp, { ret_val });
+        Ast_Node *unaryexp = new Ast_Node(UnaryExp, { primaryexp });
+        Ast_Node *mulexp = new Ast_Node(MulExp, { unaryexp });
+        Ast_Node *addexp = new Ast_Node(AddExp, { mulexp });
+        Ast_Node *exp = new Ast_Node(Exp, { addexp });
+        stmtexp = new Ast_Node(StmtExp, { exp });
+    }
+    else {
+        stmtexp = new Ast_Node(StmtExp, { new Ast_Node(EMPTY_) });
+    }
+    Ast_Node *stmt = new Ast_Node(Stmt, { new Ast_Node(RETURN_), stmtexp, new Ast_Node(SEMI_) });
+    Ast_Node *block = func->get_ast_body();
+
+    Ast_Node *blockitems = new Ast_Node(BlockItems, { block->get_childs()[1], stmt });
+    block->get_childs()[1] = blockitems;
 }
 void Ast2IR_Func(Func *func) {
     if (func->get_is_lib()) return;
