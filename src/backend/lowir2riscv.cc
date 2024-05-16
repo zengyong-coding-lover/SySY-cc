@@ -98,7 +98,15 @@ void lowir2riscv_func(Func *func, BackEnd *backend) {
             }
             case IR_BR: {
                 if (instr->br_instr.get_cond()) {
-                    TODO();
+                    REG rs = instr->br_instr.get_cond()->get_vreg()->get_reg_id();
+                    Basic_Block_Node *true_block = instr->br_instr.get_true_edge()->get_to();
+                    riscv_instr = new Riscv_Instr(RISCV_BNEZ, 0, rs, 0, 0, nullptr, block_map[true_block]);
+                    new Riscv_Block_Edge(riscv_node, block_map[true_block]);
+                    riscv_node->get_info().add_instr_tail(riscv_instr);
+                    Basic_Block_Node *false_block = instr->br_instr.get_false_edge()->get_to();
+                    riscv_instr = new Riscv_Instr(RISCV_J, 0, 0, 0, 0, nullptr, block_map[false_block]);
+                    new Riscv_Block_Edge(riscv_node, block_map[false_block]);
+                    riscv_node->get_info().add_instr_tail(riscv_instr);
                 }
                 else {
                     Basic_Block_Node *true_block = instr->br_instr.get_true_edge()->get_to();
@@ -128,7 +136,8 @@ void lowir2riscv_func(Func *func, BackEnd *backend) {
                 riscv_node->get_info().add_instr_tail(riscv_instr);
                 break;
             case IR_STORE:
-                TODO();
+                riscv_instr = new Riscv_Instr(RISCV_SW, instr->store_instr.get_src()->get_vreg()->get_reg_id(), instr->store_instr.get_addr()->get_vreg()->get_reg_id());
+                riscv_node->get_info().add_instr_tail(riscv_instr);
                 break;
             case IR_UNARY: {
                 REG rd = instr->unary_instr.get_dest()->get_reg_id();
@@ -145,7 +154,9 @@ void lowir2riscv_func(Func *func, BackEnd *backend) {
                         break;
                     }
                     if (instr->unary_instr.get_src()->get_op_kind() == global_imme) {
-                        TODO();
+                        riscv_instr = new Riscv_Instr(RISCV_LA, rd, 0, 0, 0, nullptr, nullptr, instr->unary_instr.get_src()->get_sym());
+                        riscv_node->get_info().add_instr_tail(riscv_instr);
+                        break;
                     }
                 case IR_NEG:
                     riscv_instr = new Riscv_Instr(RISCV_NEG, rd, instr->unary_instr.get_src()->get_vreg()->get_reg_id());
