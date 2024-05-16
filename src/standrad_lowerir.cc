@@ -1,7 +1,13 @@
 #include <standrad_lowir.hh>
 
 static IR_VReg *imme2reg(Func *func, Basic_Block_Node *bb, IR_Operation *op, std::list<IR_Instr *>::iterator it) {
-    TODO();
+    if (op->get_op_kind() == reg) return op->get_vreg();
+    IR_VReg *new_reg = new IR_VReg(op->get_type()->copy());
+    func->add_local_vreg(new_reg);
+    IR_Instr *assign = new IR_Instr(IR_Unary_Instr(IR_ASSIGN, new_reg, op->copy()));
+    bb->get_info().add_instr_prev(assign, it);
+    op->reset_vreg(new_reg);
+    return new_reg;
 }
 
 void standrad_lowir_func(Func *func) {

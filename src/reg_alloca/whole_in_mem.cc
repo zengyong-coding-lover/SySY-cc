@@ -3,10 +3,15 @@
 #include <symbol.hh>
 
 void new_store(Func *func, std::map<IR_VReg *, IR_VReg *> &reg_map, size_t &current_reg_id, Basic_Block_Node *node, IR_VReg *dest, std::list<IR_Instr *>::iterator &it) {
-    /*实现： 为dest 新建一个空间并设置 dest 的物理寄存器为 current_reg_id
-     将 dest store 入该空间， 更新reg_map 以便之后使用dest 时load 的是新建空间的地址。
-    */
-    TODO();
+    dest->set_reg_id(current_reg_id++);
+    IR_VReg *new_dest = dest->copy();
+    func->add_local_vreg(new_dest);
+    reg_map[dest] = new_dest;
+    IR_Instr *new_store = new IR_Instr(IR_Store_Instr(new IR_Operation(dest), new IR_Operation(new_dest)));
+    Symbol *symbol = new Symbol("", dest->get_type()->copy(), false, false, 0, false, 0, func, nullptr);
+    IR_Instr *new_alloca = new IR_Instr(IR_Alloca_Instr(new_dest, symbol));
+    node->get_info().add_instr_prev(new_alloca, it);
+    node->get_info().add_instr_prev(new_store, it);
 }
 void new_load(Func *func, std::map<IR_VReg *, IR_VReg *> &reg_map, size_t &current_reg_id, Basic_Block_Node *node, IR_Operation *src, std::list<IR_Instr *>::iterator &it) {
     if (src->get_op_kind() != reg)
