@@ -23,6 +23,10 @@ void compiler(std::string input_file, std::string output_file) {
     passes.add_pass(SIMPLIFY_CFG);
     passes.run();
     program.print();
+    passes.add_pass(MEM2REG);
+    passes.run();
+    std::cout << "Test_2 mem2reg" << std::endl;
+    program.print();
 
     std::cout << "Test_3 reg_alloca" << std::endl;
     passes.add_pass(LOWER_IR);

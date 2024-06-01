@@ -7,6 +7,7 @@ typedef enum Pass_Kind {
     LOWER_IR,
     WHOLE_IN_MEM_ALLOCA,
     AFTER_ALLOCA,
+    MEM2REG,
     LOWIR_ASM,
     STANDRAD_LOWIR,
 } Pass_Kind;

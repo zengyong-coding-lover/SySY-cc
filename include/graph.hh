@@ -129,7 +129,7 @@ public:
         this->from = from;
     }
     void reset_to(Graph_Node<Node_Info, Edge_Info> *to) {
-        auto it = this->to->get_preds().find(this);
+        auto it = find(this->to->get_preds().begin(), this->to->get_preds().end(), this);
         this->to->get_preds().erase(it);
         to->add_pred(this);
         this->to = to;
