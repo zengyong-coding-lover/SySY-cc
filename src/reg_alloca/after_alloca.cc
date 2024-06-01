@@ -1,11 +1,60 @@
+#include "func.hh"
 #include <backend/riscv.hh>
 #include <basic_value.hh>
 #include <ir.hh>
+#include <iterator>
 #include <reg_alloca/after_alloca.hh>
 #include <symbol.hh>
 #include <utils.hh>
+static void critical_edge_cut(Func *func) {
+    auto it = func->get_basic_blocks().begin();
+    while (it != func->get_basic_blocks().end()) {
+        Basic_Block_Node *bb = *it;
+        if (bb->get_succs().size() > 1) { // 节点有多个后继
+            for (auto &succ : bb->get_succs()) {
+                Basic_Block_Node *succ_bb = succ->get_to();
+                if (succ_bb->get_preds().size() > 1) { // 这些后继有多个前驱
+                    Basic_Block_Node *newbb = new Basic_Block_Node();
+                    it = func->get_basic_blocks().insert(it, newbb);
+                    newbb->get_info().set_func(func);
+                    Basic_Block_Edge *new_edge = new Basic_Block_Edge(newbb, succ_bb);
+                    succ->reset_to(newbb);
+                    for (auto &bb_param : succ->get_info().get_bb_param()) {
+                        new_edge->get_info().add_bb_param(bb_param);
+                    }
+                    succ->get_info().get_bb_param().clear();
+                    IR_Instr *new_bl = new IR_Instr(IR_Br_Instr(new_edge));
+                    newbb->get_info().add_instr_tail(new_bl);
+                }
+            }
+        }
+        it++;
+    }
+    func->reset_block_id();
+}
+
+static void deal_bb_param(Func* func, Basic_Block_Node *bb) {
+    for (auto pred : bb->get_preds()) {
+        Basic_Block_Node *pred_bb = pred->get_from();
+        auto last = std::prev(pred_bb->get_info().get_instr_list().end());
+        auto it = bb->get_info().get_phi_list().begin();
+        for (auto bb_param : pred->get_info().get_bb_param()) {
+            if (!bb_param) continue;
+            assert(bb_param->get_op_kind() == reg);
+            IR_VReg *des = *it;
+            IR_VReg *new_vreg = des->copy();
+            func->add_local_vreg(new_vreg);
+            new_vreg->set_reg_id(des->get_reg_id());
+            IR_Instr *new_assign = new IR_Instr(IR_Unary_Instr(IR_ASSIGN, new_vreg, bb_param->copy()));
+            pred_bb->get_info().add_instr_prev(new_assign, last);
+            bb_param->reset_vreg(new_vreg);
+            it++;
+        }
+    }
+}
 void after_alloca_func(Func *func, BackEnd *backend) {
     if (func->get_is_lib()) return;
+    critical_edge_cut(func);
     for (auto &reg : func->get_param_reg_list()) {
         REG newreg = backend->update_reg_id(reg->get_reg_id());
         reg->set_reg_id(newreg);
@@ -51,6 +100,7 @@ void after_alloca_func(Func *func, BackEnd *backend) {
     IR_Instr *get_fp = nullptr;
     int offset = 0;
     for (auto &bb : func->get_basic_blocks()) {
+        deal_bb_param(func, bb);
         auto it = bb->get_info().get_instr_list().begin();
         while (it != bb->get_info().get_instr_list().end()) {
             IR_Instr *instr = *it;

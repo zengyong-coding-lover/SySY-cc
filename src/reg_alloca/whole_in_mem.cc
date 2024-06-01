@@ -74,6 +74,7 @@ void whole_in_mem_alloca_func(Func *func, BackEnd *backend) {
                 src1 = instr->br_instr.get_cond();
                 for (auto &pred : node->get_succs()) {
                     for (auto &phi : pred->get_info().get_bb_param()) {
+                        if (!phi) continue;
                         new_load(func, reg_map, current_reg_id, node, phi, it);
                     }
                 }

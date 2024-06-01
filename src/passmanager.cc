@@ -1,12 +1,14 @@
-#include <backend/lowir2riscv.hh>
-#include <reg_alloca/after_alloca.hh>
 #include <ast2ir.hh>
+#include <backend/lowir2riscv.hh>
 #include <lowerir.hh>
+#include <mem2reg.hh>
 #include <passmanager.hh>
 #include <program.hh>
+#include <reg_alloca/after_alloca.hh>
 #include <reg_alloca/whole_in_mem.hh>
-#include <standrad_lowir.hh>
 #include <simplify_cfg.hh>
+#include <standrad_lowir.hh>
+
 PassManager::PassManager(Program *program) {
     this->program = program;
 }
@@ -23,6 +25,9 @@ void PassManager::run() {
             break;
         case SIMPLIFY_CFG:
             simplifycfg_program(program);
+            break;
+        case MEM2REG:
+            mem2reg_program(program);
             break;
         case LOWER_IR:
             lowerir_program(program);

@@ -122,7 +122,8 @@ void Basic_Block_Edge_Info::set_edge(Basic_Block_Edge *edge) {
 }
 void Basic_Block_Edge_Info::add_bb_param(IR_Operation *op) {
     bb_param_list.push_back(op);
-    op->set_bb_param_use(this->bb_edge);
+    if (op)
+        op->set_bb_param_use(this->bb_edge);
 }
 void Basic_Block_Edge_Info::print_bb_params(LANG_LEVEL level) {
     size_t i = 0;
@@ -130,12 +131,16 @@ void Basic_Block_Edge_Info::print_bb_params(LANG_LEVEL level) {
     for (auto &param : this->bb_param_list) {
         if (i != 0) std::cout << ",";
         i++;
-        param->print(level);
+        if (param)
+            param->print(level);
+        else
+            std::cout << "null";
     }
     std::cout << ")";
 }
 Basic_Block_Edge_Info::~Basic_Block_Edge_Info() {
     for (auto &op : this->bb_param_list) {
+        if (!op) continue;
         assert(op->get_use_bb_edge() == this->bb_edge);
         delete op;
     }
