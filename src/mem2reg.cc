@@ -57,7 +57,6 @@ static void rename(Func *func, Basic_Block_Node *bb, std::vector<BitMap> &phis_s
             }
         }
     }
-    map.print();
     // 处理基本块参数
     for (auto &edge : bb->get_succs()) {
         Basic_Block_Node *to = edge->get_to();
@@ -98,8 +97,6 @@ static void insert_phi(Func *func) {
         }
     }
 
-    for (auto &map : defs_set)
-        map.print();
     // for (auto &node : graph->get_nodes()) {
     //     for (auto &instr : node->get_info().get_instr_list()) {
     //         if (instr->get_instr_type() == IR_STORE) {

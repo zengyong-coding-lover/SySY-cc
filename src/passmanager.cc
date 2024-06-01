@@ -1,5 +1,7 @@
 #include <ast2ir.hh>
 #include <backend/lowir2riscv.hh>
+#include <copy_propagation.hh>
+#include <dead_code_eliminate.hh>
 #include <lowerir.hh>
 #include <mem2reg.hh>
 #include <passmanager.hh>
@@ -28,6 +30,12 @@ void PassManager::run() {
             break;
         case MEM2REG:
             mem2reg_program(program);
+            break;
+        case DEAD_CODE_ELIMINATE:
+            dead_code_eliminate_program(program);
+            break;
+        case COPY_PROPAGATION:
+            copy_propagation_program(program);
             break;
         case LOWER_IR:
             lowerir_program(program);

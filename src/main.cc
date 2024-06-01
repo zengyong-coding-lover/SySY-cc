@@ -28,6 +28,13 @@ void compiler(std::string input_file, std::string output_file) {
     std::cout << "Test_2 mem2reg" << std::endl;
     program.print();
 
+    passes.add_pass(COPY_PROPAGATION);
+    passes.add_pass(DEAD_CODE_ELIMINATE);
+    passes.run();
+    std::cout << "Test_3 dead_code_eliminate" << std::endl;
+    program.print();
+    passes.add_pass(SIMPLIFY_CFG);
+
     std::cout << "Test_3 reg_alloca" << std::endl;
     passes.add_pass(LOWER_IR);
     passes.add_pass(STANDRAD_LOWIR);
